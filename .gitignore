@@ -16,6 +16,7 @@ __pycache__/
 # Downloaded datasets and generated indexes
 data/upstream/
 data/chroma/
+data/attack/
 
 # IDE and operating system files
 .idea/
