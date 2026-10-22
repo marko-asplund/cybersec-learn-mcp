@@ -1,6 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 from typing import Annotated
+from urllib.parse import urlparse
 
+from dotenv import load_dotenv
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
 from mcp.server.mcpserver.exceptions import ResourceNotFoundError, ToolError
@@ -13,6 +16,8 @@ from app.errors import InvalidSearchInput, ResourceNotFound
 from app.sigma_rule_index import SigmaRuleIndex
 from app.sigma_rule_repository import SigmaRuleRepository
 from app.sigma_rule_search import RuleMatch, SigmaRuleSearch
+
+_ = load_dotenv()
 
 
 @asynccontextmanager
@@ -117,18 +122,13 @@ def get_mitre_attack_technique(technique_id: str, ctx: Context = None) -> str:
         raise ResourceNotFoundError(str(exc)) from exc
 
 
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "").replace(" ", "").splitlines()
+allowed_hosts = [urlparse(o).netloc for o in allowed_origins]
+
 app = mcp.streamable_http_app(
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=True,
-        allowed_hosts=[
-            "127.0.0.1:*",
-            "localhost:*",
-            "departed-exorcist-unpaired.ngrok-free.dev",
-        ],
-        allowed_origins=[
-            "http://127.0.0.1:*",
-            "http://localhost:*",
-            "https://departed-exorcist-unpaired.ngrok-free.dev",
-        ],
+        allowed_hosts=allowed_hosts,
+        allowed_origins=allowed_origins,
     ),
 )

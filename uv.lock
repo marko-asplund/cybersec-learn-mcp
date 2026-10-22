@@ -776,6 +776,7 @@ dependencies = [
     { name = "llama-index-embeddings-huggingface" },
     { name = "llama-index-vector-stores-chroma" },
     { name = "mcp" },
+    { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "uvicorn" },
 ]
@@ -794,6 +795,7 @@ requires-dist = [
     { name = "llama-index-embeddings-huggingface", specifier = ">=0.8.0" },
     { name = "llama-index-vector-stores-chroma", specifier = ">=0.6.0" },
     { name = "mcp", specifier = ">=2,<3" },
+    { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "uvicorn", specifier = ">=0.54.0" },
 ]

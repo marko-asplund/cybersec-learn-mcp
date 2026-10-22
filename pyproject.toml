@@ -11,6 +11,7 @@ dependencies = [
     "llama-index-embeddings-huggingface>=0.8.0",
     "llama-index-vector-stores-chroma>=0.6.0",
     "mcp>=2,<3",
+    "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
     "uvicorn>=0.54.0",
 ]
