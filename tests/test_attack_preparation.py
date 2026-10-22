@@ -53,7 +53,7 @@ def test_excludes_revoked_and_deprecated_techniques():
 
 
 def test_related_content_and_markdown_preserve_relationship_context():
-    from app.attack_technique_markdown import render_attack_technique
+    from app.attack_technique_render import render_attack_technique
 
     child = technique() | {
         "created": "2020-03-13",
@@ -221,7 +221,7 @@ def test_related_content_and_markdown_preserve_relationship_context():
 
 
 def test_markdown_handles_absent_optional_content():
-    from app.attack_technique_markdown import render_attack_technique
+    from app.attack_technique_render import render_attack_technique
 
     prepared, _ = prepare_techniques({"objects": [technique()]})
     markdown = render_attack_technique(

@@ -1,4 +1,5 @@
 import json
+import re
 from typing import TypedDict
 
 from app.sigma_rule_index import SigmaRuleIndex
@@ -29,6 +30,19 @@ class SigmaRuleSearch:
         technique_id: str | None = None,
         limit: int = 5,
     ) -> list[RuleMatch]:
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 10
+        ):
+            raise ValueError("limit must be an integer between 1 and 10")
+
+        if technique_id:
+            technique_id = technique_id.strip().lower().removeprefix("attack.").upper()
+            if not re.fullmatch(r"T\d{4}(?:\.\d{3})?", technique_id):
+                raise ValueError(
+                    "technique_id must be T1078.004 or attack.t1078.004 format"
+                )
 
         filters = []
         if product:
