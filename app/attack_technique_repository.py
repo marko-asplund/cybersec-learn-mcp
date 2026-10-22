@@ -1,6 +1,7 @@
 import json
 
 from app.attack_technique_render import render_attack_technique
+from app.errors import ResourceNotFound
 
 
 class AttackTechniqueRepository:
@@ -14,5 +15,7 @@ class AttackTechniqueRepository:
         self.source = self.data["source"]
 
     def get_technique_by_id(self, technique_id: str) -> str:
-        technique = self.techniques[technique_id]
+        technique = self.techniques.get(technique_id)
+        if technique is None:
+            raise ResourceNotFound(f"Unknown ATT&CK technique: {technique_id}")
         return render_attack_technique(technique_id, technique, self.source)

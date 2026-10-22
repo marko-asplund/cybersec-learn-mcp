@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from app.errors import ResourceNotFound
 from app.sigma_rule_index import SigmaRuleIndex
 
 
@@ -13,7 +14,7 @@ class SigmaRuleRepository:
             include=["metadatas"],
         )
         if not res["ids"]:
-            raise ValueError(f"Unknown Sigma rule: {rule_id}")
+            raise ResourceNotFound(f"Unknown Sigma rule: {rule_id}")
 
         source_path = res["metadatas"][0]["source_path"]
         path = Path("data/upstream/sigma") / source_path

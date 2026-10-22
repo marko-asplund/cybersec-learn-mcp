@@ -3,11 +3,13 @@ from typing import Annotated
 
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
+from mcp.server.mcpserver.exceptions import ResourceNotFoundError, ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from app.attack_technique_repository import AttackTechniqueRepository
+from app.errors import InvalidSearchInput, ResourceNotFound
 from app.sigma_rule_index import SigmaRuleIndex
 from app.sigma_rule_repository import SigmaRuleRepository
 from app.sigma_rule_search import RuleMatch, SigmaRuleSearch
@@ -58,9 +60,12 @@ async def search_sigma_rules(
     """
     sigma_rule_search = _get_sigma_rule_search(ctx)
 
-    hits: list[RuleMatch] = await sigma_rule_search.search_sigma_rules(
-        query, product, technique_id, limit
-    )
+    try:
+        hits: list[RuleMatch] = await sigma_rule_search.search_sigma_rules(
+            query, product, technique_id, limit
+        )
+    except InvalidSearchInput as exc:
+        raise ToolError(str(exc)) from exc
 
     return hits
 
@@ -95,7 +100,10 @@ Technique IDs include sub-techniques, for example:
 def get_sigma_rule(rule_id: str, ctx: Context = None) -> str:
     """Read the original Sigma detection YAML by rule UUID."""
     sigma_rule_repository = _get_sigma_rule_repository(ctx)
-    yaml = sigma_rule_repository.get_rule_by_id(rule_id)
+    try:
+        yaml = sigma_rule_repository.get_rule_by_id(rule_id)
+    except ResourceNotFound as exc:
+        raise ResourceNotFoundError(str(exc)) from exc
     return yaml
 
 
@@ -103,7 +111,10 @@ def get_sigma_rule(rule_id: str, ctx: Context = None) -> str:
 def get_mitre_attack_technique(technique_id: str, ctx: Context = None) -> str:
     """Read an Enterprise ATT&CK technique as Markdown with detection context and references."""
     attack_technique_repository = _get_attack_technique_repository(ctx)
-    return attack_technique_repository.get_technique_by_id(technique_id)
+    try:
+        return attack_technique_repository.get_technique_by_id(technique_id)
+    except ResourceNotFound as exc:
+        raise ResourceNotFoundError(str(exc)) from exc
 
 
 app = mcp.streamable_http_app(
