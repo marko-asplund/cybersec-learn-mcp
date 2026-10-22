@@ -1,5 +1,7 @@
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from typing import Annotated
 from urllib.parse import urlparse
 
@@ -20,30 +22,29 @@ from app.sigma_rule_search import RuleMatch, SigmaRuleSearch
 _ = load_dotenv()
 
 
+@dataclass
+class AppState:
+    attack_technique_repository: AttackTechniqueRepository
+    sigma_rule_repository: SigmaRuleRepository
+    sigma_rule_search: SigmaRuleSearch
+
+
 @asynccontextmanager
-async def lifespan(server: MCPServer):
+async def lifespan(server: MCPServer[AppState]) -> AsyncIterator[AppState]:
     index = SigmaRuleIndex()
 
-    yield {
-        "attack_technique_repository": AttackTechniqueRepository(),
-        "sigma_rule_repository": SigmaRuleRepository(index),
-        "sigma_rule_search": SigmaRuleSearch(index),
-    }
+    yield AppState(
+        AttackTechniqueRepository(),
+        SigmaRuleRepository(index),
+        SigmaRuleSearch(index),
+    )
 
 
-def _get_attack_technique_repository(ctx: Context) -> AttackTechniqueRepository:
-    return ctx.request_context.lifespan_context["attack_technique_repository"]
+def _get_app_state(ctx: Context[AppState]) -> AppState:
+    return ctx.request_context.lifespan_context
 
 
-def _get_sigma_rule_repository(ctx: Context) -> SigmaRuleRepository:
-    return ctx.request_context.lifespan_context["sigma_rule_repository"]
-
-
-def _get_sigma_rule_search(ctx: Context) -> SigmaRuleSearch:
-    return ctx.request_context.lifespan_context["sigma_rule_search"]
-
-
-mcp = MCPServer("cybersec-learn-mcp", lifespan=lifespan)
+mcp = MCPServer[AppState]("cybersec-learn-mcp", lifespan=lifespan)
 
 
 @mcp.tool(
@@ -56,14 +57,15 @@ async def search_sigma_rules(
     product: str | None = None,
     technique_id: str | None = None,
     limit: Annotated[int, Field(ge=1, le=10, strict=True)] = 5,
-    ctx: Context = None,
+    *,
+    ctx: Context[AppState],
 ) -> list[RuleMatch]:
     """Search Sigma rules with optional exact product and ATT&CK technique filters.
 
     Leave query empty for filter-only lookup. Returns compact matches and resource
     URIs for full YAML. Technique IDs accept T1078.004 or attack.t1078.004.
     """
-    sigma_rule_search = _get_sigma_rule_search(ctx)
+    sigma_rule_search = _get_app_state(ctx).sigma_rule_search
 
     try:
         hits: list[RuleMatch] = await sigma_rule_search.search_sigma_rules(
@@ -102,9 +104,9 @@ Technique IDs include sub-techniques, for example:
 
 
 @mcp.resource("cyberseclearn://rules/{rule_id}", mime_type="application/yaml")
-def get_sigma_rule(rule_id: str, ctx: Context = None) -> str:
+def get_sigma_rule(rule_id: str, ctx: Context[AppState]) -> str:
     """Read the original Sigma detection YAML by rule UUID."""
-    sigma_rule_repository = _get_sigma_rule_repository(ctx)
+    sigma_rule_repository = _get_app_state(ctx).sigma_rule_repository
     try:
         yaml = sigma_rule_repository.get_rule_by_id(rule_id)
     except ResourceNotFound as exc:
@@ -113,9 +115,9 @@ def get_sigma_rule(rule_id: str, ctx: Context = None) -> str:
 
 
 @mcp.resource("cyberseclearn://techniques/{technique_id}", mime_type="text/markdown")
-def get_mitre_attack_technique(technique_id: str, ctx: Context = None) -> str:
+def get_mitre_attack_technique(technique_id: str, ctx: Context[AppState]) -> str:
     """Read an Enterprise ATT&CK technique as Markdown with detection context and references."""
-    attack_technique_repository = _get_attack_technique_repository(ctx)
+    attack_technique_repository = _get_app_state(ctx).attack_technique_repository
     try:
         return attack_technique_repository.get_technique_by_id(technique_id)
     except ResourceNotFound as exc:

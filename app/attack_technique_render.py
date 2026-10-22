@@ -11,7 +11,7 @@ def _link(record: Mapping[str, Any]) -> str:
     return f"[{label}]({record['url']})" if record.get("url") else label
 
 
-def _references(references: list[dict]) -> str:
+def _references(references: list[dict[str, Any]]) -> str:
     lines = []
     seen = set()
     for reference in references:

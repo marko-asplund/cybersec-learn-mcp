@@ -21,7 +21,7 @@ class RuleMatch(TypedDict):
 
 
 class SigmaRuleSearch:
-    def __init__(self, sigma_rule_index: SigmaRuleIndex):
+    def __init__(self, sigma_rule_index: SigmaRuleIndex) -> None:
         self._sigma_rule_index = sigma_rule_index
 
     async def search_sigma_rules(
