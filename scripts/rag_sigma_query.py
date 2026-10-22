@@ -1,13 +1,13 @@
 """Test retrieval without an LLM or MCP. Run from the repository root.
 
-    uv run python scripts/rag_sigma_query.py "stolen AWS credentials"
-    uv run python scripts/rag_sigma_query.py "" --technique-id T1078.004
+uv run python scripts/rag_sigma_query.py "stolen AWS credentials"
+uv run python scripts/rag_sigma_query.py "" --technique-id T1078.004
 """
 
 import argparse
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 
 import chromadb
 from llama_index.core import VectorStoreIndex
@@ -26,11 +26,19 @@ def main():
     if not 1 <= args.limit <= 10:
         parser.error("--limit must be between 1 and 10")
     if not (args.index_dir / "manifest.json").exists():
-        raise SystemExit(f"No completed index at {args.index_dir}; run scripts/rag_sigma_index.py first.")
+        raise SystemExit(
+            f"No completed index at {args.index_dir}; run scripts/rag_sigma_index.py first."
+        )
     manifest = json.loads((args.index_dir / "manifest.json").read_text())
     if manifest.get("technique_metadata") != "array":
-        raise SystemExit("Index uses the old technique metadata format; rebuild it with scripts/rag_sigma_index.py.")
-    technique_id = args.technique_id.lower().removeprefix("attack.").upper() if args.technique_id else None
+        raise SystemExit(
+            "Index uses the old technique metadata format; rebuild it with scripts/rag_sigma_index.py."
+        )
+    technique_id = (
+        args.technique_id.lower().removeprefix("attack.").upper()
+        if args.technique_id
+        else None
+    )
     if technique_id and not re.fullmatch(r"T\d{4}(?:\.\d{3})?", technique_id):
         parser.error("Expected a technique such as T1078.004 or attack.t1078.004")
     filters = []
@@ -45,27 +53,38 @@ def main():
         raise SystemExit("Index count differs from manifest; rebuild the index.")
 
     if args.query.strip():
-        embed_model = HuggingFaceEmbedding(model_name=manifest["model"], device="cpu", normalize=manifest["normalize"])
+        embed_model = HuggingFaceEmbedding(
+            model_name=manifest["model"], device="cpu", normalize=manifest["normalize"]
+        )
         index = VectorStoreIndex.from_vector_store(
-            ChromaVectorStore(chroma_collection=collection), embed_model=embed_model)
+            ChromaVectorStore(chroma_collection=collection), embed_model=embed_model
+        )
         # Native where supports array membership; this adapter's generic filters do not.
         retriever = index.as_retriever(
             similarity_top_k=args.limit,
             vector_store_kwargs={"where": where} if where else {},
         )
-        matches = [(result.node.metadata, result.score, result.node.get_content())
-                   for result in retriever.retrieve(args.query)]
+        matches = [
+            (result.node.metadata, result.score, result.node.get_content())
+            for result in retriever.retrieve(args.query)
+        ]
     else:
         # Filter-only lookup reads directly from Chroma, without loading a model.
-        result = collection.get(where=where, limit=args.limit, include=["metadatas", "documents"])
-        matches = [(rule, None, text or "")
-                   for rule, text in zip(result["metadatas"], result["documents"])]
+        result = collection.get(
+            where=where, limit=args.limit, include=["metadatas", "documents"]
+        )
+        matches = [
+            (rule, None, text or "")
+            for rule, text in zip(result["metadatas"], result["documents"])
+        ]
 
     if not matches:
         print("No matching rules.")
         return
 
-    print(f"Index: {manifest['indexed']} rules; Sigma commit: {manifest['upstream_commit']}")
+    print(
+        f"Index: {manifest['indexed']} rules; Sigma commit: {manifest['upstream_commit']}"
+    )
     for rule, score, text in matches:
         print("\n--- MATCH ---")
         print("Title:", rule["title"])
