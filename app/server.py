@@ -124,6 +124,80 @@ def get_mitre_attack_technique(technique_id: str, ctx: Context[AppState]) -> str
         raise ResourceNotFoundError(str(exc)) from exc
 
 
+@mcp.prompt()
+def explain_sigma_rule(
+    rule_id: str,
+    experience_level: str = "intermediate",
+) -> str:
+    """Explain a Sigma rule and its ATT&CK mapping as a learning exercise."""
+    return f"""
+Explain the Sigma rule at cyberseclearn://rules/{rule_id}.
+Adapt the explanation for a learner with {experience_level} experience.
+
+1. Read the rule resource before explaining it.
+2. Explain its purpose, log source, and detection conditions.
+3. Give a hypothetical matching event, clearly labeled as hypothetical.
+4. Read the ATT&CK resources for its technique tags using
+   cyberseclearn://techniques/{{technique_id}}. Convert technique tags such as
+   attack.t1078.004 to T1078.004. Skip tactic tags such as attack.persistence.
+5. Explain the mappings, required telemetry, and likely false positives.
+6. Distinguish source facts from your interpretation.
+7. Finish with one comprehension question and wait for my answer.
+
+If a resource cannot be read, report that limitation rather than guessing.
+""".strip()
+
+
+@mcp.prompt()
+def investigate_technique(
+    technique_id: str,
+    product: str = "",
+) -> str:
+    """Explore an ATT&CK technique through relevant Sigma detections."""
+    technique_id = technique_id.strip().lower().removeprefix("attack.").upper()
+    product_instruction = (
+        f"Apply the exact product filter {product!r}."
+        if product
+        else "Do not apply a product filter."
+    )
+
+    return f"""
+Help me learn about ATT&CK technique {technique_id}.
+
+1. Read cyberseclearn://techniques/{technique_id}.
+2. Use search_sigma_rules with technique_id={technique_id!r},
+   an empty query, and limit=5. {product_instruction}
+3. Read the original YAML resources for the returned matches.
+4. Explain the technique, then compare the rules' detection approaches,
+   telemetry requirements, and false-positive considerations.
+5. Cite the resource URIs used.
+6. Explain that these matches are examples from this dataset, not a complete
+   assessment of detection coverage.
+7. Ask which detection I would like to examine further.
+
+If no rules match, say so and continue using the technique reference.
+""".strip()
+
+
+@mcp.prompt()
+def quiz_me_on_rule(rule_id: str) -> str:
+    """Practice interpreting a Sigma rule through an interactive quiz."""
+    return f"""
+Help me practice interpreting the Sigma rule at cyberseclearn://rules/{rule_id}.
+
+1. Read the rule resource and show its YAML before starting the quiz.
+2. Ask one question at a time about its detection conditions, required telemetry,
+   or possible false positives. Start with the detection conditions.
+3. Wait for my answer before explaining the answer or asking another question.
+4. After each answer, give feedback grounded in the rule, explain any mistakes,
+   and distinguish source facts from your interpretation.
+5. Clearly label any hypothetical events as hypothetical. Do not claim to have
+   executed the rule or tested it against real logs.
+
+If the resource cannot be read, report that limitation and stop the quiz.
+""".strip()
+
+
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").replace(" ", "").splitlines()
 allowed_hosts = [urlparse(o).netloc for o in allowed_origins]
 
