@@ -1,8 +1,9 @@
 # CyberSec Learn MCP
 
-CyberSec Learn MCP helps cybersecurity professionals search and discuss Sigma
-rules—portable detection rules for suspicious activity in security logs—and connect
-them to MITRE ATT&CK, a knowledge base of attacker tactics and techniques.
+CyberSec Learn MCP helps cybersecurity professionals search and discuss
+[Sigma rules](https://sigmahq.io/)—portable detection rules for suspicious activity
+in security logs—and connect them to [MITRE ATT&CK](https://attack.mitre.org/),
+a knowledge base of attacker tactics and techniques.
 
 Use an AI assistant to find relevant detections, understand their logic and required
 telemetry, and explore the attacker behaviors they address. This can support threat
