@@ -1,7 +1,12 @@
 # CyberSec Learn MCP
 
-A learning project for exploring cybersecurity detections through an MCP client.
-Search Sigma rules, read their original YAML, and connect them to MITRE ATT&CK.
+CyberSec Learn MCP helps cybersecurity professionals search and discuss Sigma
+rules—portable detection rules for suspicious activity in security logs—and connect
+them to MITRE ATT&CK, a knowledge base of attacker tactics and techniques.
+
+Use an AI assistant to find relevant detections, understand their logic and required
+telemetry, and explore the attacker behaviors they address. This can support threat
+investigations, detection engineering, and learning.
 
 ## What you can do
 
@@ -17,6 +22,10 @@ Example request:
 
 > Search Sigma rules for AWS SAML provider deletion. Filter by product `aws` and
 > technique `T1531`, and return up to 3 matches. Explain the matching rules.
+
+| MCP setup | Sigma rule search |
+| --- | --- |
+| ![MCP server setup](docs/images/mcp-setup.png) | ![Sigma rule search](docs/images/sigma-search.png) |
 
 ## Data
 
